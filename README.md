@@ -1,4 +1,4 @@
-# A State-of-the-Art Large-scale Pretrained Response generation model (DialoGPT)
+# A State-of-the-Art Large-scale Pretrained Response Generation Model (DialoGPT)
 
 This repository contains the source code and trained model for a large-scale pretrained dialogue response generation model. The [human evaluation results](#human_eval) indicate that the response generated from DialoGPT is comparable to human response quality under a single-turn conversation Turing test.
 
@@ -12,21 +12,58 @@ The include script can be used to reproduce the results of DSTC-7 grounded dialo
 
 Project webpage: [https://www.microsoft.com/en-us/research/project/large-scale-pretraining-for-response-generation/](https://www.microsoft.com/en-us/research/project/large-scale-pretraining-for-response-generation/)
 
+ArXiv paper: [https://arxiv.org/abs/1911.00536](https://arxiv.org/abs/1911.00536)
 
+
+## News ##
+
+***(Update 07/08/2020) The 6K multi-ref test set has been released!***
+
+To generate the data, pleaser run `demo.py` and set the data option to 'full', the generated 6k multi-ref test set will be located at
+
+`./data/test.refs.txt`
+
+***(Update 03/10/2020) Model cards available in Huggingface Transformers!***
+
+Please check out our model cards in huggingface Transformers repository. With several lines of code it should be pretty straighforward to play with the DialoGPT interactively. 
+
+[small model: https://huggingface.co/microsoft/DialoGPT-small](https://huggingface.co/microsoft/DialoGPT-small)
+
+[medium model: https://huggingface.co/microsoft/DialoGPT-medium](https://huggingface.co/microsoft/DialoGPT-medium)
+
+[large model: https://huggingface.co/microsoft/DialoGPT-large](https://huggingface.co/microsoft/DialoGPT-large)
+
+
+
+
+***(Update 01/06/2020) Some third-party decoding script implementations:***
+
+- [https://github.com/polakowo/gpt2bot](https://github.com/polakowo/gpt2bot) GPT2Bot implementation based on telegram by polakowo, [ref](https://github.com/microsoft/DialoGPT/issues/3#issuecomment-573904419)
+- [https://colab.research.google.com/drive/1PslHE4Rl4RqSa20s7HEp0ZKITBir6ezE](https://colab.research.google.com/drive/1PslHE4Rl4RqSa20s7HEp0ZKITBir6ezE) A colab interactive notebook by qywu,[ref](https://github.com/microsoft/DialoGPT/issues/3#issuecomment-551410203)
+- [https://github.com/andreamad8/DialoGPT2-Interact](https://github.com/andreamad8/DialoGPT2-Interact) An interactive script featuring multiturn chatbot by andreamad8,[ref](https://github.com/microsoft/DialoGPT/issues/3#issuecomment-551450016)
+- [https://github.com/LHolten/DialoGTP-MMI-decoder](https://github.com/LHolten/DialoGTP-MMI-decoder) An MMI implementation by LHolten,[ref](https://github.com/microsoft/DialoGPT/issues/3#issuecomment-558318401)
+- [https://colab.research.google.com/drive/1-_KjlAV3J1IVDw_9KogjKDCzgFY7Jp7E](https://colab.research.google.com/drive/1-_KjlAV3J1IVDw_9KogjKDCzgFY7Jp7E) A colab interactive notebook by illuminascent@Reddit,[ref](https://www.reddit.com/r/MachineLearning/comments/dt5woy/p_dialogpt_state_of_the_art_conversational_model/?st=k530k3oo&sh=f6cd20fd)
 
 
 <!--**This github repository will be updated soon. Please stay tuned.**-->
-## Minimal Computational Configurations
-This code can be run on CPU, but it would be slow. We would recommend to use GPU to train and finetune all models. There is no minimal limit of the number of GPUs. However, if using distributed train for multiple GPUs configuration, the speed-up vs the number of GPUs is roughly sub-linear. To simulate the same batchsize when using less GPUs, please use a larger `gradient_accumulation_steps` in model training. 
+<!--## Minimal Computational Configurations-->
+## Recommended Configuration
+
+- Linux Ubuntu 16.04
+- GPU with at least 12G memory
+
+DialoGPT was developed entirely on **Ubuntu 16.04**, and -- depending on our availability -- we try to provide support if you experience difficulties running the code on the same configuration. However, we are **unable to provide support for other distributions or operating systems**. Portions of the code may run on other UNIX flavors (macOS, Windows subsystem for Linux, Cygwin, etc.), but it is recommended to use Ubuntu for the main training code.
+
+The training code can be run on CPU, but it can be slow. We would recommend to use GPU to train and finetune all models. There is no minimal limit of the number of GPUs. However, if using distributed train for multiple GPUs configuration, the speed-up vs the number of GPUs is roughly sub-linear. To simulate the same batchsize when using less GPUs, please use a larger `gradient_accumulation_steps` in model training. 
 
 The 117M and 345M model can be loaded in a single GPU with 12G memory. The 762M model would require a single GPU that has greater than 16G memory for efficient training. The training speed on a benchmark data with 50M training instances and V100 GPUs:
 
-| n\_gpu           | epoch time (min) | token/sec  |
+| n\_gpu           | epoch time (h) | token/sec  |
 |----------------------|--------|--------|
-| 1              | 158 | 25466 |
-| 2              | 96 | 41861 |
-| 4              | 73 | 54994 |
-| 8              | 65 | 63612 |
+| 1              | 118 | 10847 |
+| 2              | 62 | 20645 |
+| 4              | 34 | 37647 |
+| 8              | 18 | 71356 |
 
 Fine-tuning from our pretrained model on a new dataset typically requires 1-2 epochs.
 
@@ -39,11 +76,11 @@ We created a demo script `demo.py` to ease the difficulty of the deployment of t
 
 #### Train model with Conda Environment
 
-Please use the below commandlines to clone, install the requirements and load the Conda environment (Note that Cuda 10 is required):
+Please use the below commandlines to clone, install the requirements and load the Conda environment (Note that the Nvidia CUDA 10.0 developer toolkit is required):
 
 
 ```bash
-sudo apt-get install -y make wget gzip bzip2 xz-utils zstd
+sudo apt-get install -y make wget gzip bzip2 xz-utils zstd sed
 ```
 
 ```bash
@@ -110,12 +147,16 @@ python demo.py --data small
 python demo.py --data full
 ```
 
-The small Reddit data is around 140MB and the full Reddit data is more than 30GB. You can prepare a cup of coffee when processing with the full Reddit data because **it takes a long time**!
+The small Reddit data is around 140MB and the full Reddit data is more than 27GB. You can prepare a cup of coffee when processing with the full Reddit data because **it takes a long time**!
+
+To generate the 6k multi-ref test set data, pleaser run `demo.py` and set the data option to 'full', the generation will be located at
+
+`./data/test.refs.txt`
 
 #### Pretrained model
 
-The pretrained and fine-tuned models are available on azure blobstorage [here](https://convaisharables.blob.core.windows.net/lsp).
-Please run/see `demo.py` for more details about how to download/use those models. 
+The pretrained and fine-tuned models are available on azure blobstorage.
+Please run/see `demo.py` for more details about how to download/use those models. Or you could download directly by using the links in `demo_utils.py`.
 
 #### Preparing data
 First, use the `prepare4db.sh` to convert a tsv data file into the correct format that the following script can recognize.
@@ -163,18 +204,55 @@ The log file and saved model checkpoint can be found in `./models/output_model`
 We note that even with properly filtered Reddit dataset, sometimes our model can still generate moderately toxic/inappropriate responses. Due to this reason, we are unable to provide the decoding script at this time (The live demo and decoding script access is upon invitation only now ).
 We are currently still working on a controlled decoding method to prevent this system from toxic generation. Please stay tuned. 
 
+**See issues [#3](https://github.com/microsoft/DialoGPT/issues/3) and [Reddit discussions](https://www.reddit.com/r/MachineLearning/comments/dt5woy/p_dialogpt_state_of_the_art_conversational_model/) for some discussions on third-party decoding methods.** 
+
+See below for some third-party decoding methods:
+- [https://github.com/polakowo/gpt2bot](https://github.com/polakowo/gpt2bot) GPT2Bot implementation based on telegram by polakowo, [ref](https://github.com/microsoft/DialoGPT/issues/3#issuecomment-573904419)
+- [https://colab.research.google.com/drive/1PslHE4Rl4RqSa20s7HEp0ZKITBir6ezE](https://colab.research.google.com/drive/1PslHE4Rl4RqSa20s7HEp0ZKITBir6ezE) A colab interactive notebook by qywu,[ref](https://github.com/microsoft/DialoGPT/issues/3#issuecomment-551410203)
+- [https://github.com/andreamad8/DialoGPT2-Interact](https://github.com/andreamad8/DialoGPT2-Interact) An interactive script featuring multiturn chatbot by andreamad8,[ref](https://github.com/microsoft/DialoGPT/issues/3#issuecomment-551450016)
+- [https://github.com/LHolten/DialoGTP-MMI-decoder](https://github.com/LHolten/DialoGTP-MMI-decoder) An MMI implementation by LHolten,[ref](https://github.com/microsoft/DialoGPT/issues/3#issuecomment-558318401)
+- [https://colab.research.google.com/drive/1-_KjlAV3J1IVDw_9KogjKDCzgFY7Jp7E](https://colab.research.google.com/drive/1-_KjlAV3J1IVDw_9KogjKDCzgFY7Jp7E) A colab interactive notebook by illuminascent@Reddit,[ref](https://www.reddit.com/r/MachineLearning/comments/dt5woy/p_dialogpt_state_of_the_art_conversational_model/?st=k530k3oo&sh=f6cd20fd)
+
 
 ## Models
 
 We release 6 fine-tuned models which can be further fine-tuned on low-resource  user-customized dataset. The total parameters in these models range from 117M to 762M, in accord with OpenAI GPT-2 model sizes.   
 
-| Model           |  Download|
-|----------------------|--------|
-| DialoGPT 762M model| [link](https://convaisharables.blob.core.windows.net/lsp/multiref/large_ft.pkl) |
-| DialoGPT 345M model| [link](https://convaisharables.blob.core.windows.net/lsp/multiref/medium_ft.pkl) |
-| DialoGPT 117M model| [link](https://convaisharables.blob.core.windows.net/lsp/multiref/small_ft.pkl) |
+| Model           |  Fine-tuned from GPT-2| Trained from scratch
+|----------------------|--------|--------|
+| DialoGPT 762M model| [\[link\]](https://convaisharables.blob.core.windows.net/lsp/multiref/large_ft.pkl) [\[huggingface model card\]](https://huggingface.co/microsoft/DialoGPT-large)  | [\[link\]](https://convaisharables.blob.core.windows.net/lsp/multiref/large_fs.pkl) |
+| DialoGPT 345M model| [\[link\]](https://convaisharables.blob.core.windows.net/lsp/multiref/medium_ft.pkl) [\[huggingface model card\]](https://huggingface.co/microsoft/DialoGPT-medium) | [\[link\]](https://convaisharables.blob.core.windows.net/lsp/multiref/medium_fs.pkl) | 
+| DialoGPT 117M model| [\[link\]](https://convaisharables.blob.core.windows.net/lsp/multiref/small_ft.pkl) [\[huggingface model card\]](https://huggingface.co/microsoft/DialoGPT-small)| [\[link\]](https://convaisharables.blob.core.windows.net/lsp/multiref/small_fs.pkl) | 
+| DialoGPT 345M model (reverse, for MMI)| [link](https://convaisharables.blob.core.windows.net/lsp/multiref/small_reverse.pkl) | -| 
 
-The model files can be loaded exactly as the GPT-2 model checkpoint from Huggingface pytorch-transformer repository. 
+
+
+The model files can be loaded exactly as the GPT-2 model checkpoints from Huggingface's [Transformers](https://github.com/huggingface/transformers). You can find the corresponding configuration files (`merges.txt`, `config.json`, `vocab.json`) in DialoGPT's repo in `./configs/*`.
+
+The reverse model is predicting the source from the target. This model is used  for MMI reranking. 
+
+## Retraining full models
+
+### Preparation
+
+The first step to retrain the full models is to generate the aforementioned 27GB Reddit dataset. This involves downloading full Reddit submission and comments dumps from [https://files.pushshift.io/reddit](https://files.pushshift.io/reddit) and creating intermediate files, which overall require **700GB of local disk space**. Downloading and processing the full data requires about 1-2 days, depending on your (CPU) compute capabilties (e.g., ~24 hours with 8 cores on a recent computer). Assuming you ran the above setup and installation steps (conda activate LSP, etc.), you can create the full dataset by running either:
+
+```
+python demo.py --data full
+```
+or
+```
+cd reddit_extractor; SIZE=full make -j 8; cd ..
+```
+
+The former command calls the latter, so the two methods are equivalent. We recommend the former, as the latter is mostly useful if you run into any problem or want to customize any arguments (e.g., the `make` command lets you build only a subset of the data). Note that the downloading phase can be error prone, for example based on your geolocation (firewall, etc.). If the above commands fail to generate `data/train.tsv`, or if that file is not anywhere close to 27GB, it means something went wrong. In that case, you may want to inspect `reddit_extractor/wget-log` and `reddit_extractor/logs/*.log` for any obvious error (e.g., wget unable to download from pushshift.io). If error messages don't make sense to you, feel free to contact us. If so, please be sure to include any error messages gathered from these log files.
+
+Training data statistics: the generated training tsv file should be roughly 26.8 GB uncompressed, with 146.8M training instances, 3.87B source tokens, and 2.14B target tokens (including utterance-level 0/1 weights).
+
+
+### Training
+
+We recommand generating the above data using the `demo.py --data full`, as it (1) generates the data, (2) converts it into DB format, and (3) trains a model using `python LSP_train.py`. Please directly edit `demo.py` if you want to customize any of the hyperparameters.
 
 
 ## Evaluations
@@ -240,7 +318,7 @@ The evaluation results will be generated in the folder `./dstc/eval/`
 
 ### Automatic evaluation
 
-We test on 6K multi-ref dataset from Reddit (this test data will be release soon). The results are summarized in below
+We test on 6K multi-ref dataset from Reddit. The results are summarized in below
 
 | Experiment         | NIST2 | NIST4 | BLEU2  | BLEU4 | METEOR | ENT-4 | DIST-1 | DIST-2 | Avg. Len |
 |--------------------|-------|-------|--------|-------|--------|----------|------------|------------|---------|
@@ -282,7 +360,7 @@ We further conduct human evaluations (6K examples for each methods, each example
 |DialoGPT 345M w/ MMI| **2978**      (50%)|    241         (4%)  |  2781        (46%)| Human responses|
 
 
-Please see full details in our arXiv paper (coming soon). 
+Please see full details in our [arxiv paper](https://arxiv.org/abs/1911.00536). 
 
 
 
@@ -341,7 +419,7 @@ System Wins      (%)         Ties        (%)         Losses   (%)
 |---------|--------|
 |User | what is the meaning of life ?|
 | Bot | The  meaning  is  to  be  with  your  family  and friends .|
-|Bot | I’m going to guess :  It means that your par-ents and friends have loved you . That’s the meaning , I believe . |
+|Bot | I’m going to guess :  It means that your parents and friends have loved you . That’s the meaning , I believe . |
 | Bot | I think  the  meaning  is  to  make  sure  you’re alive when you die . So you’ll be with your family , friends , and yourself .|
 |Bot |It’s not , but thanks for trying to help . |
 
@@ -477,10 +555,11 @@ top_p | `float` | `0.9` | Nucleus filtering (top-p) before sampling (`<=0.0`: no
 
 * Pretrained UniLM: [https://github.com/microsoft/unilm](https://github.com/microsoft/unilm)
 * MT-DNN: [https://github.com/namisan/mt-dnn](https://github.com/namisan/mt-dnn)
+* A chinese counterpart of DialoGPT by yangjianxin1. [https://github.com/yangjianxin1/GPT2-chitchat](https://github.com/yangjianxin1/GPT2-chitchat). We are glad to see that the MMI strategy that we used in DialoGPT has also improved the performance for this project as well!
 
 ## Contact
 
-Please contact [DialoGPT@microsoft.com](mailto:DialoGPT@microsoft.com) if you have any questions/suggestions. However, the response will be sporadic. Please expected delays.
+Please contact [DialoGPT@microsoft.com](mailto:DialoGPT@microsoft.com) if you have any questions/suggestions. However, the response will be sporadic. Please expect delay.
 
 ## Contributing
 
